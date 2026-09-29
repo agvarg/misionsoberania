@@ -5,420 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Misión Soberanía Vital 2050 · Hackeando a KRONOS-9</title>
 
-<!-- Fuentes de Google Fonts: Orbitron para títulos, Rajdhani para texto de lectura -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 
-<style>
-/* ==========================================================================
-   1) VARIABLES DE DISEÑO
-   Paleta sobria de ciencia ficción: azul noche / gris carbón, acentos en
-   cian, ámbar y violeta. Sin verde flúo ni rojo puro sobre negro.
-   Todos los pares texto/fondo cumplen WCAG 2.1 AA (contraste ≥ 4.5:1).
-   ========================================================================== */
-:root{
-  --bg-void:      #080B14;
-  --bg-deep:      #0D1322;
-  --bg-panel:     #141B30;
-  --bg-panel-hi:  #1B2440;
-  --border-soft:  #2C3763;
-  --border-hi:    #3E4E86;
-
-  --text-primary:   #EAF0FB;
-  --text-secondary: #AEBBDA;
-  --text-muted:     #7C89AE;
-
-  --accent-cyan:    #6EE7F0;
-  --accent-cyan-2:  #2B7A87;
-  --accent-amber:   #F5B84E;
-  --accent-violet:  #9C90E8;
-  --accent-danger:  #F28B7D;
-  --accent-success: #6EE7B7;
-
-  --font-display: 'Orbitron', 'Segoe UI', sans-serif;
-  --font-body:    'Rajdhani', 'Segoe UI', sans-serif;
-
-  --radius: 10px;
-}
-
-/* Reset simple */
-*{ box-sizing: border-box; }
-html{ scroll-behavior: smooth; }
-body{
-  margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 20% -10%, rgba(156,144,232,0.12), transparent 55%),
-    radial-gradient(ellipse at 100% 110%, rgba(110,231,240,0.10), transparent 55%),
-    var(--bg-void);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 20px;              /* base ~20px, párrafos suben a ~23px más abajo */
-  line-height: 1.5;
-}
-
-h1,h2,h3, .code-value, .hud-title, .btn{ font-family: var(--font-display); }
-
-/* Líneas de grilla sutiles de fondo, efecto "sala de control" */
-.grid-overlay{
-  position: fixed; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(110,231,240,0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(110,231,240,0.045) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
-}
-
-/* ==========================================================================
-   2) ESTRUCTURA GENERAL / HEADER
-   ========================================================================== */
-#app{ position: relative; z-index: 1; min-height: 100vh; display:flex; flex-direction:column; }
-
-header.top-bar{
-  display:flex; align-items:center; justify-content:space-between;
-  gap: 1rem; flex-wrap: wrap;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(180deg, var(--bg-deep), rgba(13,19,34,0.4));
-  border-bottom: 1px solid var(--border-soft);
-}
-.brand{ display:flex; align-items:center; gap:.75rem; }
-.brand-icon{ width:38px; height:38px; flex:0 0 auto; }
-.brand-text h1{
-  margin:0; font-size: clamp(1.05rem, 1.6vw, 1.35rem);
-  letter-spacing: .04em; color: var(--text-primary);
-}
-.brand-text p{
-  margin:0; font-size: .95rem; color: var(--accent-cyan); font-weight:600;
-}
-
-/* Indicador de progreso (estaciones) */
-.stepper{ display:flex; align-items:center; gap: .6rem; }
-.step-dot{
-  width: 14px; height:14px; border-radius:50%;
-  background: var(--bg-panel-hi); border: 2px solid var(--border-hi);
-  transition: background .3s, border-color .3s, transform .3s;
-}
-.step-dot.done{ background: var(--accent-success); border-color: var(--accent-success); }
-.step-dot.active{ border-color: var(--accent-cyan); transform: scale(1.25); }
-.step-label{ font-size: .95rem; color: var(--text-muted); margin-right:.3rem; }
-
-/* ==========================================================================
-   3) LAYOUT PRINCIPAL: escena central + panel lateral (HUD docente)
-   ========================================================================== */
-main.layout{
-  flex:1; display:flex; gap: 1.5rem; align-items:flex-start;
-  padding: 1.75rem; max-width: 1280px; margin: 0 auto; width:100%;
-}
-
-.stage-wrap{ flex: 1 1 640px; min-width: 0; }
-
-/* Tarjeta / panel tipo terminal reutilizado en todas las escenas */
-.panel{
-  position: relative;
-  background: linear-gradient(180deg, var(--bg-panel), var(--bg-deep));
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0,0,0,.35);
-}
-/* Línea de escaneo sutil, decorativa, respetuosa de "prefers-reduced-motion" */
-.panel::before{
-  content:""; position:absolute; left:0; right:0; height:2px; top:0;
-  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-  opacity:.55;
-  animation: scan 5s linear infinite;
-}
-@keyframes scan{
-  0%{ top:0; opacity:0; }
-  8%{ opacity:.55; }
-  50%{ top:100%; opacity:.55; }
-  60%{ opacity:0; }
-  100%{ top:100%; opacity:0; }
-}
-
-.eyebrow{
-  display:inline-flex; align-items:center; gap:.5rem;
-  font-size: .95rem; color: var(--accent-amber); font-weight:700;
-  letter-spacing:.03em; margin-bottom:.5rem;
-}
-.eyebrow .dot{ width:8px; height:8px; border-radius:50%; background: var(--accent-amber); }
-
-.panel h2{
-  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
-  margin: .1rem 0 1rem;
-  color: var(--text-primary);
-}
-.panel p.lead{
-  font-size: 1.15rem; /* ~23px */
-  color: var(--text-secondary);
-  max-width: 68ch;
-}
-
-/* Caja de alerta (bloqueo de KRONOS-9) */
-.alert-box{
-  border: 1px solid var(--accent-danger);
-  background: rgba(242,139,125,0.08);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin: 1.25rem 0;
-  display:flex; gap:.85rem; align-items:flex-start;
-}
-.alert-box strong{ color: var(--accent-danger); }
-.alert-box p{ margin:.2rem 0 0; font-size:1.1rem; color: var(--text-secondary); }
-
-/* Formularios de clave */
-.key-form{ margin-top: 1.5rem; display:flex; flex-wrap:wrap; gap: .85rem; align-items:flex-end; }
-.field{ display:flex; flex-direction:column; gap:.4rem; }
-.field label{ font-size: 1rem; color: var(--text-muted); font-weight:600; }
-.field input{
-  font-family: var(--font-display);
-  font-size: 1.3rem; letter-spacing:.08em; text-transform:uppercase;
-  background: var(--bg-void);
-  border: 1px solid var(--border-hi);
-  border-radius: 8px;
-  color: var(--accent-cyan);
-  padding: .65rem .9rem;
-  width: 220px;
-  max-width: 100%;
-}
-.field input:focus-visible{
-  outline: 3px solid var(--accent-cyan);
-  outline-offset: 2px;
-}
-.field .hint{ font-size: .9rem; color: var(--text-muted); font-weight: 500; }
-
-/* Botones */
-.btn{
-  cursor:pointer; border:none; border-radius: 8px;
-  font-size: 1.05rem; font-weight:700; letter-spacing:.03em;
-  padding: .8rem 1.5rem;
-  color: var(--bg-void);
-  background: linear-gradient(135deg, var(--accent-cyan), #4FC6D6);
-  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
-}
-.btn:hover{ filter: brightness(1.08); }
-.btn:active{ transform: translateY(1px); }
-.btn:focus-visible{ outline: 3px solid var(--accent-amber); outline-offset:3px; }
-.btn.secondary{
-  background: transparent; color: var(--text-primary);
-  border: 1px solid var(--border-hi);
-}
-.btn.ghost{ background: transparent; color: var(--accent-cyan); border:1px solid var(--accent-cyan-2); }
-.btn:disabled{ opacity:.45; cursor:not-allowed; filter:none; }
-
-/* Feedback de intento */
-.feedback{
-  margin-top: 1.1rem; padding: .9rem 1.1rem; border-radius: 8px;
-  font-size: 1.05rem; font-weight:600; display:none; gap:.6rem; align-items:center;
-}
-.feedback.show{ display:flex; }
-.feedback.ok{
-  background: rgba(110,231,183,0.10); border:1px solid var(--accent-success); color: var(--accent-success);
-}
-.feedback.bad{
-  background: rgba(242,139,125,0.10); border:1px solid var(--accent-danger); color: var(--accent-danger);
-}
-
-.scene-nav{ margin-top: 1.75rem; display:flex; justify-content:flex-end; gap:.75rem; }
-
-/* ==========================================================================
-   3.1) ESTACIÓN 1 — JUEGO "EL FILTRO DE BIODIVERSIDAD"
-   Mismo sistema visual del resto del proyecto: se reutilizan las variables
-   y componentes ya definidos (.panel, colores, tipografías).
-   ========================================================================== */
-.bio-map{
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  background: var(--bg-void);
-  padding: .75rem 1rem 1.1rem;
-  margin: 1.25rem 0;
-}
-.bio-map svg{ width:100%; height:auto; display:block; }
-.bio-map figcaption{
-  margin-top:.4rem; font-size:.9rem; color: var(--text-muted); text-align:center;
-}
-
-.bio-progress{
-  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
-  margin: 1.1rem 0 .25rem; font-size: 1.05rem; color: var(--text-secondary);
-}
-.bio-progress strong{ color: var(--accent-cyan); letter-spacing:.03em; }
-
-.bio-grid{
-  display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 1rem; margin: .75rem 0 .5rem;
-}
-.bio-card{
-  display:flex; flex-direction:column; gap:.5rem;
-  background: var(--bg-panel-hi);
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 1rem;
-  transition: border-color .2s ease, background .2s ease, transform .12s ease;
-}
-.bio-card .bio-emoji{ font-size: 1.9rem; line-height:1; }
-.bio-card h4{ margin:0; font-size: 1.05rem; font-family: var(--font-body); font-weight:700; color: var(--text-primary); }
-.bio-card p{ margin:0; font-size: .95rem; color: var(--text-secondary); }
-.bio-actions{ display:flex; gap:.5rem; margin-top:.3rem; }
-.bio-btn{
-  flex:1; cursor:pointer; font-family: var(--font-body); font-weight:700; font-size: .95rem;
-  padding: .5rem .4rem; border-radius:6px; border: 1px solid var(--border-hi);
-  background: transparent; color: var(--text-secondary);
-  transition: border-color .15s, color .15s;
-}
-.bio-btn:hover:not(:disabled){ border-color: var(--accent-cyan); color: var(--accent-cyan); }
-.bio-btn:focus-visible{ outline: 3px solid var(--accent-amber); outline-offset: 2px; }
-.bio-btn:disabled{ opacity:.4; cursor:not-allowed; }
-
-.bio-card.correct{ border-color: var(--accent-success); background: rgba(110,231,183,0.08); }
-.bio-card.incorrect{ animation: shakeCard .4s ease; border-color: var(--accent-danger); }
-@keyframes shakeCard{
-  0%,100%{ transform: translateX(0); }
-  25%{ transform: translateX(-5px); }
-  75%{ transform: translateX(5px); }
-}
-.bio-status{ display:none; font-size:.85rem; font-weight:700; color: var(--accent-success); }
-.bio-card.correct .bio-status{ display:inline; }
-
-/* ==========================================================================
-   3.2) ESTACIÓN 2 — JUEGO "LA RED ENERGÉTICA Y TEMPORAL"
-   Reutiliza .bio-card / .bio-grid; suma un selector de posición y una
-   línea de tiempo que se arma en vivo con lo que el equipo va eligiendo.
-   ========================================================================== */
-.bio-select{
-  width:100%; font-family: var(--font-body); font-weight:700; font-size: 1rem;
-  padding: .5rem .5rem; border-radius:6px; border: 1px solid var(--border-hi);
-  background: var(--bg-void); color: var(--accent-cyan);
-}
-.bio-select:disabled{ opacity:.5; }
-.bio-select:focus-visible{ outline: 3px solid var(--accent-amber); outline-offset: 2px; }
-
-.timeline{
-  display:flex; align-items:stretch; gap:.5rem; overflow-x:auto;
-  margin: 1.1rem 0; padding: .25rem .1rem .5rem;
-}
-.timeline-slot{
-  flex: 0 0 130px; background: var(--bg-void); border: 1px dashed var(--border-hi);
-  border-radius: 8px; padding: .65rem .55rem; display:flex; flex-direction:column;
-  gap:.3rem; align-items:center; text-align:center;
-}
-.timeline-slot.filled{ border-style: solid; border-color: var(--accent-cyan-2); }
-.timeline-num{ font-family: var(--font-display); color: var(--accent-violet); font-size: .85rem; }
-.timeline-content{ font-size: .85rem; color: var(--text-secondary); }
-.timeline-arrow{ align-self:center; color: var(--text-muted); font-size:1.2rem; flex:0 0 auto; }
-
-/* ==========================================================================
-   3.3) ESTACIÓN 3 — JUEGO "NÚCLEO 3R"
-   Reutiliza .bio-card / .bio-grid; cada tarjeta tiene tres botones de
-   categoría en vez de dos. El color de cada botón identifica su categoría
-   (Reducir / Reusar / Reciclar), no si esa tarjeta está bien o mal.
-   ========================================================================== */
-.bio-actions.three{ flex-direction: column; }
-.bio-btn.opt-reducir{ border-color: var(--accent-amber); color: var(--accent-amber); }
-.bio-btn.opt-reusar{ border-color: var(--accent-violet); color: var(--accent-violet); }
-.bio-btn.opt-reciclar{ border-color: var(--accent-cyan); color: var(--accent-cyan); }
-.bio-btn.opt-reducir:hover:not(:disabled){ background: rgba(245,184,78,0.12); }
-.bio-btn.opt-reusar:hover:not(:disabled){ background: rgba(156,144,232,0.12); }
-.bio-btn.opt-reciclar:hover:not(:disabled){ background: rgba(110,231,240,0.12); }
-
-.legend-3r{ display:flex; flex-wrap:wrap; gap: .9rem; margin: 1rem 0 .25rem; font-size: .95rem; }
-.legend-3r span{ display:inline-flex; align-items:center; gap:.4rem; color: var(--text-secondary); }
-.legend-3r .swatch{ width:12px; height:12px; border-radius:3px; display:inline-block; }
-
-/* ==========================================================================
-   4) HUD LATERAL — código acumulado + registro visible de intentos
-   (Este panel funciona como evidencia para el/la docente)
-   ========================================================================== */
-aside.hud{
-  flex: 0 0 300px;
-  position: sticky; top: 1.25rem;
-  display:flex; flex-direction:column; gap:1rem;
-}
-.hud-card{
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius);
-  padding: 1.1rem 1.25rem;
-}
-.hud-title{
-  font-size: .95rem; color: var(--accent-violet);
-  margin:0 0 .75rem; letter-spacing:.04em;
-}
-.code-display{ display:flex; gap:.4rem; flex-wrap:wrap; }
-.code-chip{
-  font-family: var(--font-display);
-  background: var(--bg-void); border:1px dashed var(--border-hi);
-  color: var(--text-muted);
-  border-radius:6px; padding:.4rem .6rem; font-size:1.1rem; min-width:2.4ch; text-align:center;
-}
-.code-chip.filled{ color: var(--accent-cyan); border-style:solid; border-color: var(--accent-cyan-2); }
-
-table.log-table{ width:100%; border-collapse: collapse; font-size: .95rem; }
-table.log-table th, table.log-table td{
-  text-align:left; padding:.45rem .3rem; border-bottom: 1px solid var(--border-soft);
-  color: var(--text-secondary);
-}
-table.log-table th{ color: var(--text-muted); font-weight:600; }
-.state-pill{
-  display:inline-block; padding:.15rem .55rem; border-radius:999px; font-size:.82rem; font-weight:700;
-}
-.state-pill.pending{ background: rgba(124,137,174,0.18); color: var(--text-muted); }
-.state-pill.solved{ background: rgba(110,231,183,0.15); color: var(--accent-success); }
-
-.timer{ font-family: var(--font-display); font-size:1.4rem; color: var(--accent-amber); }
-
-/* ==========================================================================
-   5) PANTALLA FINAL — Banco de Semillas liberado
-   ========================================================================== */
-.victory .panel{ text-align:center; border-color: var(--accent-success); }
-.sprout{ width:96px; height:96px; margin: 0 auto 1rem; }
-.sprout .stem{ transform-origin: bottom center; animation: grow 1.4s ease-out forwards; }
-.sprout .leaf{ opacity:0; animation: leafIn .7s ease-out forwards; }
-.sprout .leaf.l2{ animation-delay:.5s; }
-@keyframes grow{ from{ transform: scaleY(0);} to{ transform: scaleY(1);} }
-@keyframes leafIn{ from{ opacity:0; transform: scale(.4);} to{ opacity:1; transform: scale(1);} }
-
-.final-code{
-  font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.4rem);
-  color: var(--accent-success); letter-spacing:.12em; margin: 1rem 0;
-}
-.summary-grid{
-  display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin: 1.5rem 0;
-}
-.summary-item{
-  background: var(--bg-void); border:1px solid var(--border-soft); border-radius: var(--radius);
-  padding: .9rem 1.3rem; min-width: 150px;
-}
-.summary-item .num{ font-family: var(--font-display); font-size:1.5rem; color: var(--accent-cyan); }
-.summary-item .lbl{ font-size:.9rem; color: var(--text-muted); }
-
-/* Utilidad para ocultar/mostrar escenas sin recargar la página */
-.scene{ display:none; animation: fadeUp .4s ease; }
-.scene.active{ display:block; }
-@keyframes fadeUp{ from{ opacity:0; transform: translateY(8px);} to{opacity:1; transform:translateY(0);} }
-
-footer.foot{
-  text-align:center; color: var(--text-muted); font-size:.9rem;
-  padding: 1rem; border-top: 1px solid var(--border-soft);
-}
-
-/* Respeta la preferencia de movimiento reducido */
-@media (prefers-reduced-motion: reduce){
-  .panel::before, .sprout .stem, .sprout .leaf{ animation: none !important; }
-}
-
-/* Responsive: prioriza escritorio/netbook, pero se adapta a pantallas chicas */
-@media (max-width: 980px){
-  main.layout{ flex-direction: column; }
-  aside.hud{ position: static; width:100%; flex-basis:auto; }
-}
-@media (max-width: 560px){
-  body{ font-size: 18px; }
-  .field input{ width:100%; }
-}
-</style>
+<link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 <div class="grid-overlay" aria-hidden="true"></div>
@@ -440,12 +28,16 @@ footer.foot{
         <p>Hackeando a KRONOS-9</p>
       </div>
     </div>
+    <div class="top-controles">
+    <button type="button" class="btn ghost btn-sonido" id="btn-sonido" aria-pressed="true">🔊 Sonido: sí</button>
+    <button type="button" class="btn ghost btn-sonido" id="btn-musica" aria-pressed="true">🎵 Música: sí</button>
     <div class="stepper" id="stepper" aria-label="Progreso de la misión">
       <span class="step-label">Progreso:</span>
       <span class="step-dot" data-step="1"></span>
       <span class="step-dot" data-step="2"></span>
       <span class="step-dot" data-step="3"></span>
       <span class="step-dot" data-step="4"></span>
+    </div>
     </div>
   </header>
 
@@ -492,25 +84,23 @@ footer.foot{
           <h2>El Filtro de Biodiversidad</h2>
           <p class="lead">
             KRONOS-9 "depuró" su base de datos de biodiversidad del Delta del Paraná, dejando
-            solo fragmentos sueltos. Con el mapa del ecosistema y las muestras botánicas de la
-            estación analógica, tu equipo ya identificó qué especies son nativas y cuáles son
-            exóticas invasoras. Ahora hay que cargar esa clasificación en el filtro digital.
+            solo fragmentos sueltos. Para reconstruirla, el equipo necesita consultar un documento
+            que la IA no pudo borrar porque está impreso, fuera de la red.
           </p>
 
-          <!-- Mapa decorativo del Delta del Paraná (SVG simple, sin imágenes externas) -->
-          <figure class="bio-map">
-            <svg viewBox="0 0 600 150" role="img" aria-labelledby="mapaTitulo">
-              <title id="mapaTitulo">Mapa esquemático del Delta del Paraná</title>
-              <path d="M0,90 C 80,60 140,110 220,80 C 300,50 340,100 420,70 C 480,50 540,90 600,60"
-                    fill="none" stroke="#6EE7F0" stroke-width="10" opacity=".35"/>
-              <path d="M0,110 C 100,130 160,80 240,105 C 320,130 380,90 460,110 C 520,125 560,100 600,110"
-                    fill="none" stroke="#9C90E8" stroke-width="7" opacity=".3"/>
-              <circle cx="150" cy="75" r="4" fill="#F5B84E"/>
-              <circle cx="330" cy="65" r="4" fill="#F5B84E"/>
-              <circle cx="470" cy="95" r="4" fill="#F5B84E"/>
-            </svg>
-            <figcaption>Mapa de referencia: cursos de agua e islas del Delta del Paraná</figcaption>
-          </figure>
+          <!-- Documento impreso que el grupo tiene en el aula (número y lugar se editan en config.js) -->
+          <div class="doc-confidencial" role="note">
+            <div class="doc-sello" aria-hidden="true">CONFIDENCIAL</div>
+            <div class="doc-icono" aria-hidden="true">📁</div>
+            <div class="doc-texto">
+              <strong>Documento confidencial N.º <span data-cfg="doc-numero"></span></strong>
+              <p>
+                Se encuentra en <span data-cfg="doc-ubicacion"></span>. Búsquenlo, léanlo con
+                atención y úsenlo para decidir qué especies son nativas del Delta y cuáles son
+                exóticas invasoras. Después carguen la clasificación en el filtro digital.
+              </p>
+            </div>
+          </div>
 
           <div class="bio-progress">
             <span>Especies clasificadas correctamente:</span>
@@ -533,39 +123,58 @@ footer.foot{
         <div class="panel">
           <span class="eyebrow"><span class="dot"></span> ESTACIÓN 2 DE 3</span>
           <h2>La Red Energética y Temporal</h2>
-          <p class="lead">
-            Toda red trófica describe un camino de energía: del sol a los productores, de ahí a
-            los consumidores, y finalmente a los descomponedores. En la estación analógica tu
-            equipo ya ordenó ese flujo de energía a través del tiempo. Ahora hay que reconstruir
-            esa misma secuencia acá para que KRONOS-9 la reconozca.
-          </p>
 
-          <!-- Línea de tiempo: se completa en vivo con lo que el equipo va eligiendo -->
-          <div class="timeline" id="timeline-2" aria-label="Línea de tiempo del flujo de energía">
-            <div class="timeline-slot" data-pos="1"><span class="timeline-num">1</span><span class="timeline-content">—</span></div>
-            <span class="timeline-arrow" aria-hidden="true">→</span>
-            <div class="timeline-slot" data-pos="2"><span class="timeline-num">2</span><span class="timeline-content">—</span></div>
-            <span class="timeline-arrow" aria-hidden="true">→</span>
-            <div class="timeline-slot" data-pos="3"><span class="timeline-num">3</span><span class="timeline-content">—</span></div>
-            <span class="timeline-arrow" aria-hidden="true">→</span>
-            <div class="timeline-slot" data-pos="4"><span class="timeline-num">4</span><span class="timeline-content">—</span></div>
-            <span class="timeline-arrow" aria-hidden="true">→</span>
-            <div class="timeline-slot" data-pos="5"><span class="timeline-num">5</span><span class="timeline-content">—</span></div>
-          </div>
-
-          <div class="bio-progress">
-            <span>Elementos en la posición correcta:</span>
-            <strong id="bio-progress-count-2">0 / 0</strong>
-          </div>
-
-          <form id="form-2">
-            <div class="bio-grid" id="energy-grid" aria-label="Elementos del flujo de energía para ordenar"></div>
-            <div class="scene-nav" style="justify-content:flex-start; margin-top:1rem;">
-              <button class="btn" type="submit">Verificar secuencia</button>
+          <!-- ============ PASO 1: video informativo (se ve ANTES de la actividad) ============ -->
+          <div id="video2-bloque">
+            <span class="eyebrow paso"><span class="dot"></span> PASO 1 · VIDEO DE INFORMACIÓN</span>
+            <p class="lead">
+              Toda red trófica describe un camino de energía. Antes de armarla, miren con atención
+              este video: tiene la información que van a necesitar en la actividad.
+            </p>
+            <div id="video2-marco-wrap">
+              <div class="video-marco" id="video-marco"></div>
             </div>
-          </form>
+            <p class="video-ayuda" id="video-ayuda" aria-live="polite"></p>
+            <div class="video-acciones">
+              <a class="btn ghost" id="video-link" target="_blank" rel="noopener">Abrir en YouTube</a>
+              <button class="btn" type="button" id="btn-video-ok" disabled>Ya vimos el video: armar la red trófica</button>
+            </div>
+          </div>
 
-          <div class="feedback" id="feedback-2" role="status" aria-live="polite"></div>
+          <!-- ============ PASO 2: red trófica interactiva (se habilita al terminar el video) ============ -->
+          <div id="actividad2" class="fase-oculta">
+            <span class="eyebrow paso"><span class="dot"></span> PASO 2 · ARMAR LA RED TRÓFICA</span>
+            <p class="lead">
+              Arrastren cada tarjeta hasta su casillero para reconstruir el camino de la energía, del
+              primer paso al último. <strong>Atención:</strong> algunas tarjetas no forman parte del
+              flujo de energía; a esas hay que llevarlas a la zona «No pertenece a la secuencia».
+            </p>
+            <p class="ayuda-dnd">
+              También se puede tocar una tarjeta y después tocar el casillero donde va (o usar el
+              teclado: Enter o Espacio para elegir y para soltar).
+              <button type="button" class="btn ghost chico" id="btn-ver-video">📺 Ver el video otra vez</button>
+            </p>
+
+            <div class="cadena" id="cadena-2" aria-label="Camino de la energía: casilleros en orden"></div>
+
+            <div class="dnd-fila">
+              <div class="zona-dnd zona-pool" id="pool-2" data-zona="pool" tabindex="0" role="group"
+                   aria-label="Tarjetas sin ubicar"></div>
+              <div class="zona-dnd zona-excluir" id="excluir-2" data-zona="excluir" tabindex="0" role="group"
+                   aria-label="Zona: no pertenece a la secuencia"></div>
+            </div>
+
+            <div class="bio-progress">
+              <span>Tarjetas ubicadas correctamente:</span>
+              <strong id="bio-progress-count-2">0 / 0</strong>
+            </div>
+
+            <div class="scene-nav" style="justify-content:flex-start; margin-top:.5rem;">
+              <button class="btn" type="button" id="btn-verificar-2">Verificar red trófica</button>
+            </div>
+
+            <div class="feedback" id="feedback-2" role="status" aria-live="polite"></div>
+          </div>
 
           <div class="scene-nav">
             <button class="btn secondary" type="button" data-goto="scene-1">Volver</button>
@@ -581,8 +190,8 @@ footer.foot{
           <h2>Núcleo 3R</h2>
           <p class="lead">
             El núcleo de KRONOS-9 se rige por una única regla que suele ignorar: Reducir, Reusar,
-            Reciclar. En la estación analógica tu equipo ya clasificó residuos según esa
-            jerarquía. Ahora hay que cargar esa clasificación acá para que el núcleo la valide.
+            Reciclar. En la estación analógica tu equipo ya trabajó con esa jerarquía. Acá hay que
+            completar tres fases para desbloquear el Banco de Semillas.
           </p>
 
           <div class="legend-3r" aria-hidden="true">
@@ -591,18 +200,53 @@ footer.foot{
             <span><span class="swatch" style="background:var(--accent-cyan)"></span> Reciclar</span>
           </div>
 
-          <div class="bio-progress">
-            <span>Residuos clasificados correctamente:</span>
-            <strong id="bio-progress-count-3">0 / 0</strong>
+          <!-- ==================== FASE 1: clasificación de residuos ==================== -->
+          <div id="fase3-a">
+            <span class="eyebrow"><span class="dot"></span> FASE 1 DE 3 · CLASIFICACIÓN</span>
+            <div class="bio-progress">
+              <span>Residuos clasificados correctamente:</span>
+              <strong id="bio-progress-count-3a">0 / 0</strong>
+            </div>
+            <div class="bio-grid" id="waste-grid" aria-label="Tarjetas de residuos para clasificar"></div>
+            <div class="feedback" id="feedback-3a" role="status" aria-live="polite"></div>
           </div>
 
-          <div class="bio-grid" id="waste-grid" aria-label="Tarjetas de residuos para clasificar"></div>
+          <!-- ==================== FASE 2: jerarquía de las 3R ==================== -->
+          <div id="fase3-b" class="fase-bloque fase-oculta">
+            <span class="eyebrow"><span class="dot"></span> FASE 2 DE 3 · JERARQUÍA</span>
+            <p class="lead" style="font-size:1.05rem;">
+              Ahora ordenen las 3R por prioridad ambiental: la estrategia que conviene aplicar
+              primero va en el lugar 1.
+            </p>
+            <form id="form-3b">
+              <div class="bio-grid" id="jerarquia-grid" aria-label="Tarjetas de prioridad de las 3R"></div>
+              <div class="scene-nav" style="justify-content:flex-start; margin-top:1rem;">
+                <button class="btn" type="submit">Verificar orden</button>
+              </div>
+            </form>
+            <div class="feedback" id="feedback-3b" role="status" aria-live="polite"></div>
+          </div>
 
-          <div class="feedback" id="feedback-3" role="status" aria-live="polite"></div>
+          <!-- ==================== FASE 3: transmisión manual del código completo ==================== -->
+          <div id="fase3-c" class="fase-bloque fase-oculta">
+            <span class="eyebrow"><span class="dot"></span> FASE 3 DE 3 · TRANSMISIÓN FINAL</span>
+            <p class="lead" style="font-size:1.05rem;">
+              Miren el panel "Código de acceso" del costado: ya tiene las tres claves reveladas.
+              Escribí el código completo para transmitirlo a KRONOS-9 y liberar el Banco de Semillas.
+            </p>
+            <form class="key-form" id="form-3c">
+              <div class="field">
+                <label for="input-final">Código completo</label>
+                <input type="text" id="input-final" placeholder="Ej: K-0-E-0-0" autocomplete="off">
+                <span class="hint">Formato: K-#-E-#-# (tal como aparece en el HUD)</span>
+              </div>
+              <button class="btn" type="submit">Transmitir código a KRONOS-9</button>
+            </form>
+            <div class="feedback" id="feedback-3c" role="status" aria-live="polite"></div>
+          </div>
 
           <div class="scene-nav">
             <button class="btn secondary" type="button" data-goto="scene-2">Volver</button>
-            <button class="btn" type="button" id="next-3" disabled>Transmitir código a KRONOS-9</button>
           </div>
         </div>
       </section>
@@ -671,545 +315,8 @@ footer.foot{
   </footer>
 </div>
 
-<script>
-/* ============================================================================
-   CONFIGURACIÓN EDITABLE POR EL / LA DOCENTE
-   Todas las claves y textos importantes están agrupados acá arriba.
-   Para cambiar una clave o un texto, solo hay que editar este bloque:
-   no hace falta tocar el resto del código.
-   ============================================================================ */
-const CONFIG = {
-
-  // Claves correctas de cada estación (podés cambiarlas sin tocar nada más)
-  claves: {
-    estacion1: "K-8",   // Escena 1 · El Filtro de Biodiversidad
-    estacion2: "E-8",   // Escena 2 · La Red Energética y Temporal
-    estacion3: "4"      // Escena 3 · Núcleo 3R (solo el número final)
-  },
-
-  // Mensajes de feedback (se pueden personalizar por estación si se desea)
-  mensajes: {
-    correcto: "Clave aceptada. KRONOS-9 reconoce el fragmento de código.",
-    incorrecto: "Clave no reconocida por el sistema. Revisen la pista de la estación y vuelvan a intentar."
-  },
-
-  // Tarjetas del juego de la Estación 1 ("El Filtro de Biodiversidad").
-  // Para agregar, sacar o cambiar una especie, solo hay que editar esta lista.
-  // "tipo" debe ser exactamente "nativa" o "exotica".
-  estacion1Tarjetas: [
-    { id:"c1",  nombre:"Ceibo",                   emoji:"🌺", pista:"Árbol de flores rojas, típico de las costas del río.", tipo:"nativa" },
-    { id:"c2",  nombre:"Sauce criollo",           emoji:"🌳", pista:"Tolera las inundaciones y sostiene las orillas con sus raíces.", tipo:"nativa" },
-    { id:"c3",  nombre:"Camalote",                emoji:"🌿", pista:"Planta flotante que forma islas vegetales en el río.", tipo:"nativa" },
-    { id:"c4",  nombre:"Carpincho",                emoji:"🐹", pista:"El roedor más grande del mundo, siempre cerca del agua.", tipo:"nativa" },
-    { id:"c5",  nombre:"Coipo",                    emoji:"🐭", pista:"Roedor semiacuático de dientes anaranjados.", tipo:"nativa" },
-    { id:"c6",  nombre:"Yacaré overo",             emoji:"🐊", pista:"Reptil de los humedales, amenazado por la caza furtiva.", tipo:"nativa" },
-    { id:"c7",  nombre:"Ligustro",                 emoji:"🌱", pista:"Arbusto traído de Asia que desplaza al monte nativo.", tipo:"exotica" },
-    { id:"c8",  nombre:"Jabalí europeo",           emoji:"🐗", pista:"Mamífero introducido para la caza; remueve y erosiona el suelo.", tipo:"exotica" },
-    { id:"c9",  nombre:"Mejillón dorado",          emoji:"🦪", pista:"Molusco llegado en barcos; tapa cañerías y desplaza fauna nativa.", tipo:"exotica" },
-    { id:"c10", nombre:"Tortuga de orejas rojas",  emoji:"🐢", pista:"Mascota liberada que compite con las tortugas locales.", tipo:"exotica" }
-  ],
-
-  // Elementos del flujo de energía de la Estación 2 ("La Red Energética y Temporal").
-  // "posicion" es el lugar correcto en la secuencia (1 a 5, sin repetir).
-  // Se puede editar el nombre, emoji o descripción sin tocar el resto del código,
-  // pero si se cambia la CANTIDAD de elementos hay que ajustar también los
-  // <div class="timeline-slot"> de la Escena 2 en el HTML.
-  estacion2Elementos: [
-    { id:"e1", nombre:"Sol (energía solar)",        emoji:"☀️", descripcion:"Fuente primaria de energía que llega al ecosistema.", posicion:1 },
-    { id:"e2", nombre:"Productores",                 emoji:"🌿", descripcion:"Camalotes, algas y plantas captan la energía solar por fotosíntesis.", posicion:2 },
-    { id:"e3", nombre:"Consumidores primarios",      emoji:"🐹", descripcion:"Herbívoros, como el carpincho, se alimentan de los productores.", posicion:3 },
-    { id:"e4", nombre:"Consumidores secundarios",    emoji:"🐊", descripcion:"Carnívoros, como el yacaré, se alimentan de los consumidores primarios.", posicion:4 },
-    { id:"e5", nombre:"Descomponedores",             emoji:"🍄", descripcion:"Hongos y bacterias degradan la materia orgánica y devuelven nutrientes al ecosistema.", posicion:5 }
-  ],
-
-  // Residuos de la Estación 3 ("Núcleo 3R"). "categoria" debe ser exactamente
-  // "reducir", "reusar" o "reciclar". Se puede cambiar, agregar o quitar
-  // residuos libremente; la clave final no depende de la cantidad de tarjetas.
-  estacion3Residuos: [
-    { id:"r1", nombre:"Bolsa plástica de un solo uso",     emoji:"🛍️", pista:"Se entrega en un comercio y se tira después de un solo uso.", categoria:"reducir" },
-    { id:"r2", nombre:"Vaso descartable",                   emoji:"🥤", pista:"Se usa unos minutos y enseguida se convierte en basura.", categoria:"reducir" },
-    { id:"r3", nombre:"Envoltorio individual de golosina",  emoji:"🍬", pista:"Genera residuo aunque lo que envuelve dure solo un instante.", categoria:"reducir" },
-    { id:"r4", nombre:"Frasco de vidrio",                   emoji:"🫙", pista:"Se puede lavar y volver a llenar muchas veces.", categoria:"reusar" },
-    { id:"r5", nombre:"Caja de cartón fuerte",              emoji:"📦", pista:"Sirve para guardar o mudar cosas antes de descartarla.", categoria:"reusar" },
-    { id:"r6", nombre:"Ropa en buen estado",                emoji:"👕", pista:"Puede donarse o intercambiarse en vez de tirarse.", categoria:"reusar" },
-    { id:"r7", nombre:"Lata de aluminio",                   emoji:"🥫", pista:"Se separa para fundirse y convertirse en metal nuevo.", categoria:"reciclar" },
-    { id:"r8", nombre:"Botella de plástico PET",            emoji:"🧴", pista:"Se procesa para fabricar fibra textil o nuevos envases.", categoria:"reciclar" },
-    { id:"r9", nombre:"Papel y cartón rotos",               emoji:"♻️", pista:"Ya no sirven para reusar, pero sí como materia prima.", categoria:"reciclar" }
-  ]
-};
-
-/* ============================================================================
-   ESTADO DE LA APLICACIÓN (no requiere edición docente)
-   ============================================================================ */
-const estado = {
-  escenaActual: "scene-inicio",
-  estaciones: {
-    estacion1: { intentos: 0, resuelto: false },
-    estacion2: { intentos: 0, resuelto: false },
-    estacion3: { intentos: 0, resuelto: false }
-  },
-  inicioTiempo: null,
-  finTiempo: null,
-  intervaloTimer: null
-};
-
-// Mapa de índice de estación -> id de sección
-const ORDEN_ESCENAS = ["scene-inicio", "scene-1", "scene-2", "scene-3", "scene-final"];
-
-/* ============================================================================
-   ESTACIÓN 1 · JUEGO "EL FILTRO DE BIODIVERSIDAD"
-   Clasificación de tarjetas (nativa / exótica invasora). Al clasificar todas
-   las tarjetas correctamente, completarEstacion1() revela la clave definida
-   en CONFIG.claves.estacion1 y habilita el botón "Continuar".
-   ============================================================================ */
-function renderEstacion1(){
-  const cont = document.getElementById("bio-grid");
-  cont.innerHTML = "";
-  CONFIG.estacion1Tarjetas.forEach(t => {
-    const card = document.createElement("div");
-    card.className = "bio-card";
-    card.id = "card-" + t.id;
-    card.innerHTML = `
-      <span class="bio-emoji" aria-hidden="true">${t.emoji}</span>
-      <h4>${t.nombre}</h4>
-      <p>${t.pista}</p>
-      <div class="bio-actions">
-        <button type="button" class="bio-btn" data-id="${t.id}" data-eleccion="nativa">Nativa del Delta</button>
-        <button type="button" class="bio-btn" data-id="${t.id}" data-eleccion="exotica">Exótica invasora</button>
-      </div>
-      <span class="bio-status">✅ Clasificada correctamente</span>
-    `;
-    cont.appendChild(card);
-  });
-  cont.querySelectorAll(".bio-btn").forEach(btn => {
-    btn.addEventListener("click", () => clasificarTarjetaEstacion1(btn.dataset.id, btn.dataset.eleccion));
-  });
-  actualizarProgresoEstacion1();
-}
-
-function clasificarTarjetaEstacion1(id, eleccion){
-  const st = estado.estaciones.estacion1;
-  if(st.resuelto) return; // ya se desbloqueó la estación, no se aceptan más intentos
-
-  const cardEl = document.getElementById("card-" + id);
-  if(cardEl.classList.contains("correct")) return; // esa tarjeta ya está resuelta
-
-  const tarjeta = CONFIG.estacion1Tarjetas.find(t => t.id === id);
-  st.intentos += 1; // cada clic sobre una tarjeta cuenta como un intento
-
-  if(eleccion === tarjeta.tipo){
-    cardEl.classList.add("correct");
-    cardEl.querySelectorAll(".bio-btn").forEach(b => b.disabled = true);
-    st.correctas = (st.correctas || 0) + 1;
-  } else {
-    cardEl.classList.remove("incorrect");
-    void cardEl.offsetWidth; // fuerza el reinicio de la animación de "sacudida"
-    cardEl.classList.add("incorrect");
-    setTimeout(() => cardEl.classList.remove("incorrect"), 450);
-  }
-
-  actualizarProgresoEstacion1();
-  actualizarRegistro();
-
-  if((st.correctas || 0) === CONFIG.estacion1Tarjetas.length){
-    completarEstacion1();
-  }
-}
-
-function actualizarProgresoEstacion1(){
-  const st = estado.estaciones.estacion1;
-  document.getElementById("bio-progress-count").textContent =
-    `${st.correctas || 0} / ${CONFIG.estacion1Tarjetas.length}`;
-}
-
-function completarEstacion1(){
-  // Equivale a haber tipeado la clave correcta: reutiliza el mismo flujo de
-  // feedback y de habilitación del botón "Continuar" que las otras estaciones.
-  const st = estado.estaciones.estacion1;
-  st.resuelto = true;
-
-  const feedbackEl = document.getElementById("feedback-1");
-  feedbackEl.textContent = `✅ Filtro de biodiversidad desbloqueado. KRONOS-9 reconoce la clave ${CONFIG.claves.estacion1}.`;
-  feedbackEl.className = "feedback show ok";
-
-  document.getElementById("next-1").disabled = false;
-  actualizarCodigo();
-  actualizarRegistro();
-}
-
-function reiniciarEstacion1(){
-  estado.estaciones.estacion1 = { intentos: 0, resuelto: false, correctas: 0 };
-  renderEstacion1();
-  document.getElementById("feedback-1").className = "feedback";
-  document.getElementById("next-1").disabled = true;
-}
-
-/* ============================================================================
-   ESTACIÓN 2 · JUEGO "LA RED ENERGÉTICA Y TEMPORAL"
-   El equipo asigna una posición (1 a 5) a cada elemento del flujo de energía.
-   Al verificar, se marcan como correctos los que ya están en su lugar y quedan
-   bloqueados; los demás se pueden volver a intentar. Al completar los 5 se
-   revela automáticamente la clave de la estación, igual que en la Estación 1.
-   ============================================================================ */
-
-// Orden de aparición de las tarjetas en pantalla (mezclado a propósito para
-// que el equipo tenga que pensar el orden y no lo lea directo del HTML).
-const ORDEN_VISUAL_ESTACION2 = ["e3", "e1", "e5", "e2", "e4"];
-
-function renderEstacion2(){
-  const cont = document.getElementById("energy-grid");
-  cont.innerHTML = "";
-  const total = CONFIG.estacion2Elementos.length;
-
-  ORDEN_VISUAL_ESTACION2.forEach(id => {
-    const el = CONFIG.estacion2Elementos.find(x => x.id === id);
-    let opciones = `<option value="">Posición…</option>`;
-    for(let i = 1; i <= total; i++){ opciones += `<option value="${i}">${i}</option>`; }
-
-    const card = document.createElement("div");
-    card.className = "bio-card";
-    card.id = "card-" + el.id;
-    card.innerHTML = `
-      <span class="bio-emoji" aria-hidden="true">${el.emoji}</span>
-      <h4>${el.nombre}</h4>
-      <p>${el.descripcion}</p>
-      <div class="bio-actions">
-        <select class="bio-select" data-id="${el.id}" aria-label="Posición en la secuencia para ${el.nombre}">${opciones}</select>
-      </div>
-      <span class="bio-status">✅ Posición correcta</span>
-    `;
-    cont.appendChild(card);
-  });
-
-  cont.querySelectorAll(".bio-select").forEach(sel => {
-    sel.addEventListener("change", actualizarLineaTiempoEstacion2);
-  });
-
-  document.getElementById("bio-progress-count-2").textContent = `0 / ${total}`;
-  actualizarLineaTiempoEstacion2();
-}
-
-// Redibuja la línea de tiempo según lo que el equipo eligió en cada select
-function actualizarLineaTiempoEstacion2(){
-  document.querySelectorAll(".timeline-slot").forEach(slot => {
-    slot.classList.remove("filled");
-    slot.querySelector(".timeline-content").textContent = "—";
-  });
-  document.querySelectorAll(".bio-select").forEach(sel => {
-    if(!sel.value) return;
-    const el = CONFIG.estacion2Elementos.find(x => x.id === sel.dataset.id);
-    const slot = document.querySelector(`.timeline-slot[data-pos="${sel.value}"]`);
-    if(slot){
-      slot.querySelector(".timeline-content").textContent = `${el.emoji} ${el.nombre}`;
-      slot.classList.add("filled");
-    }
-  });
-}
-
-function verificarSecuenciaEstacion2(){
-  const st = estado.estaciones.estacion2;
-  if(st.resuelto) return;
-  st.intentos += 1; // cada clic en "Verificar secuencia" cuenta como un intento
-
-  let correctas = 0;
-  CONFIG.estacion2Elementos.forEach(el => {
-    const card = document.getElementById("card-" + el.id);
-    if(card.classList.contains("correct")){ correctas += 1; return; }
-
-    const select = card.querySelector(".bio-select");
-    const valor = parseInt(select.value, 10);
-
-    if(valor === el.posicion){
-      card.classList.add("correct");
-      select.disabled = true;
-      correctas += 1;
-    } else {
-      card.classList.remove("incorrect");
-      void card.offsetWidth; // reinicia la animación de "sacudida"
-      card.classList.add("incorrect");
-      setTimeout(() => card.classList.remove("incorrect"), 450);
-    }
-  });
-
-  document.getElementById("bio-progress-count-2").textContent =
-    `${correctas} / ${CONFIG.estacion2Elementos.length}`;
-  actualizarRegistro();
-
-  const feedbackEl = document.getElementById("feedback-2");
-  if(correctas === CONFIG.estacion2Elementos.length){
-    completarEstacion2();
-  } else {
-    feedbackEl.textContent =
-      `⚠ ${CONFIG.mensajes.incorrecto} (${correctas} de ${CONFIG.estacion2Elementos.length} en su posición correcta).`;
-    feedbackEl.className = "feedback show bad";
-  }
-}
-
-function completarEstacion2(){
-  const st = estado.estaciones.estacion2;
-  st.resuelto = true;
-
-  const feedbackEl = document.getElementById("feedback-2");
-  feedbackEl.textContent = `✅ Secuencia energética correcta. KRONOS-9 reconoce la clave ${CONFIG.claves.estacion2}.`;
-  feedbackEl.className = "feedback show ok";
-
-  document.getElementById("next-2").disabled = false;
-  actualizarCodigo();
-  actualizarRegistro();
-}
-
-function reiniciarEstacion2(){
-  estado.estaciones.estacion2 = { intentos: 0, resuelto: false };
-  renderEstacion2();
-  document.getElementById("feedback-2").className = "feedback";
-  document.getElementById("next-2").disabled = true;
-}
-
-/* ============================================================================
-   ESTACIÓN 3 · JUEGO "NÚCLEO 3R"
-   Mismo patrón que la Estación 1 (tarjetas con clasificación inmediata), pero
-   con tres categorías posibles en lugar de dos: reducir / reusar / reciclar.
-   Al clasificar todos los residuos correctamente se revela el número final.
-   ============================================================================ */
-const CATEGORIAS_3R = [
-  { valor: "reducir",  etiqueta: "Reducir"  },
-  { valor: "reusar",   etiqueta: "Reusar"   },
-  { valor: "reciclar", etiqueta: "Reciclar" }
-];
-
-function renderEstacion3(){
-  const cont = document.getElementById("waste-grid");
-  cont.innerHTML = "";
-
-  CONFIG.estacion3Residuos.forEach(r => {
-    const botones = CATEGORIAS_3R.map(cat =>
-      `<button type="button" class="bio-btn opt-${cat.valor}" data-id="${r.id}" data-eleccion="${cat.valor}">${cat.etiqueta}</button>`
-    ).join("");
-
-    const card = document.createElement("div");
-    card.className = "bio-card";
-    card.id = "card-" + r.id;
-    card.innerHTML = `
-      <span class="bio-emoji" aria-hidden="true">${r.emoji}</span>
-      <h4>${r.nombre}</h4>
-      <p>${r.pista}</p>
-      <div class="bio-actions three">${botones}</div>
-      <span class="bio-status">✅ Clasificado correctamente</span>
-    `;
-    cont.appendChild(card);
-  });
-
-  cont.querySelectorAll(".bio-btn").forEach(btn => {
-    btn.addEventListener("click", () => clasificarResiduoEstacion3(btn.dataset.id, btn.dataset.eleccion));
-  });
-
-  actualizarProgresoEstacion3();
-}
-
-function clasificarResiduoEstacion3(id, eleccion){
-  const st = estado.estaciones.estacion3;
-  if(st.resuelto) return;
-
-  const cardEl = document.getElementById("card-" + id);
-  if(cardEl.classList.contains("correct")) return;
-
-  const residuo = CONFIG.estacion3Residuos.find(r => r.id === id);
-  st.intentos += 1; // cada clic sobre una tarjeta cuenta como un intento
-
-  if(eleccion === residuo.categoria){
-    cardEl.classList.add("correct");
-    cardEl.querySelectorAll(".bio-btn").forEach(b => b.disabled = true);
-    st.correctas = (st.correctas || 0) + 1;
-  } else {
-    cardEl.classList.remove("incorrect");
-    void cardEl.offsetWidth; // reinicia la animación de "sacudida"
-    cardEl.classList.add("incorrect");
-    setTimeout(() => cardEl.classList.remove("incorrect"), 450);
-  }
-
-  actualizarProgresoEstacion3();
-  actualizarRegistro();
-
-  if((st.correctas || 0) === CONFIG.estacion3Residuos.length){
-    completarEstacion3();
-  }
-}
-
-function actualizarProgresoEstacion3(){
-  const st = estado.estaciones.estacion3;
-  document.getElementById("bio-progress-count-3").textContent =
-    `${st.correctas || 0} / ${CONFIG.estacion3Residuos.length}`;
-}
-
-function completarEstacion3(){
-  const st = estado.estaciones.estacion3;
-  st.resuelto = true;
-
-  const feedbackEl = document.getElementById("feedback-3");
-  feedbackEl.textContent = `✅ Núcleo 3R equilibrado. KRONOS-9 reconoce el número final ${CONFIG.claves.estacion3}.`;
-  feedbackEl.className = "feedback show ok";
-
-  document.getElementById("next-3").disabled = false;
-  actualizarCodigo();
-  actualizarRegistro();
-}
-
-function reiniciarEstacion3(){
-  estado.estaciones.estacion3 = { intentos: 0, resuelto: false, correctas: 0 };
-  renderEstacion3();
-  document.getElementById("feedback-3").className = "feedback";
-  document.getElementById("next-3").disabled = true;
-}
-
-function mostrarEscena(id){
-  document.querySelectorAll(".scene").forEach(s => s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  estado.escenaActual = id;
-  actualizarStepper();
-  // Lleva el foco al inicio del panel para navegación por teclado / lectores de pantalla
-  const panel = document.querySelector(`#${id} .panel`);
-  if(panel){ panel.setAttribute("tabindex","-1"); panel.focus({preventScroll:false}); }
-}
-
-function actualizarStepper(){
-  const indice = ORDEN_ESCENAS.indexOf(estado.escenaActual); // 0..4
-  document.querySelectorAll(".step-dot").forEach((dot, i) => {
-    const paso = i + 1; // 1..4 (inicio no tiene punto propio, arranca en estación 1)
-    dot.classList.remove("done","active");
-    if(indice > paso) dot.classList.add("done");
-    else if(indice === paso) dot.classList.add("active");
-  });
-}
-
-/* ============================================================================
-   CÓDIGO ACUMULADO (HUD)
-   ============================================================================ */
-function actualizarCodigo(){
-  const c1 = estado.estaciones.estacion1.resuelto ? CONFIG.claves.estacion1.split("-")[1] : "?";
-  const c2 = estado.estaciones.estacion2.resuelto ? CONFIG.claves.estacion2.split("-")[1] : "?";
-  const c3 = estado.estaciones.estacion3.resuelto ? CONFIG.claves.estacion3 : "?";
-
-  setChip("k-n", c1, estado.estaciones.estacion1.resuelto);
-  setChip("e-n", c2, estado.estaciones.estacion2.resuelto);
-  setChip("final", c3, estado.estaciones.estacion3.resuelto);
-}
-function setChip(slot, valor, lleno){
-  const el = document.querySelector(`.code-chip[data-slot="${slot}"]`);
-  el.textContent = valor;
-  el.classList.toggle("filled", !!lleno);
-}
-
-/* ============================================================================
-   REGISTRO DE INTENTOS (evidencia para el/la docente)
-   ============================================================================ */
-const NOMBRES_ESTACION = {
-  estacion1: "1 · Biodiversidad",
-  estacion2: "2 · Red Energética",
-  estacion3: "3 · Núcleo 3R"
-};
-
-function actualizarRegistro(){
-  const tbody = document.getElementById("log-body");
-  tbody.innerHTML = "";
-  Object.keys(estado.estaciones).forEach(key => {
-    const st = estado.estaciones[key];
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${NOMBRES_ESTACION[key]}</td>
-      <td>${st.intentos}</td>
-      <td><span class="state-pill ${st.resuelto ? "solved" : "pending"}">
-            ${st.resuelto ? "Resuelto" : "Pendiente"}
-          </span></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* ============================================================================
-   TEMPORIZADOR DE MISIÓN
-   ============================================================================ */
-function iniciarTimer(){
-  estado.inicioTiempo = Date.now();
-  estado.intervaloTimer = setInterval(() => {
-    const seg = Math.floor((Date.now() - estado.inicioTiempo) / 1000);
-    const mm = String(Math.floor(seg / 60)).padStart(2, "0");
-    const ss = String(seg % 60).padStart(2, "0");
-    document.getElementById("timer-display").textContent = `${mm}:${ss}`;
-  }, 1000);
-}
-function detenerTimer(){
-  clearInterval(estado.intervaloTimer);
-  estado.finTiempo = Date.now();
-}
-function tiempoTotalTexto(){
-  const seg = Math.floor((estado.finTiempo - estado.inicioTiempo) / 1000);
-  const mm = String(Math.floor(seg / 60)).padStart(2, "0");
-  const ss = String(seg % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
-}
-
-/* ============================================================================
-   PANTALLA FINAL
-   ============================================================================ */
-function mostrarFinal(){
-  detenerTimer();
-  const codigoFinal = `${CONFIG.claves.estacion1}-${CONFIG.claves.estacion2}-${CONFIG.claves.estacion3}`;
-  document.getElementById("final-code-display").textContent = codigoFinal;
-
-  const totalIntentos = Object.values(estado.estaciones).reduce((acc, s) => acc + s.intentos, 0);
-  const grid = document.getElementById("summary-grid");
-  grid.innerHTML = `
-    <div class="summary-item"><div class="num">${tiempoTotalTexto()}</div><div class="lbl">Tiempo total</div></div>
-    <div class="summary-item"><div class="num">${totalIntentos}</div><div class="lbl">Intentos totales</div></div>
-    <div class="summary-item"><div class="num">3 / 3</div><div class="lbl">Estaciones resueltas</div></div>
-  `;
-  mostrarEscena("scene-final");
-}
-
-/* ============================================================================
-   REINICIO (para que el mismo dispositivo se use con el próximo equipo)
-   ============================================================================ */
-function reiniciarMision(){
-  Object.keys(estado.estaciones).forEach(k => { estado.estaciones[k] = { intentos:0, resuelto:false }; });
-  reiniciarEstacion1(); // la Estación 1 es un juego de tarjetas, no un campo de texto
-  reiniciarEstacion2(); // la Estación 2 es un juego de secuenciación, no un campo de texto
-  reiniciarEstacion3(); // la Estación 3 es un juego de clasificación 3R, no un campo de texto
-  actualizarCodigo();
-  actualizarRegistro();
-  clearInterval(estado.intervaloTimer);
-  document.getElementById("timer-display").textContent = "00:00";
-  mostrarEscena("scene-inicio");
-}
-
-/* ============================================================================
-   EVENTOS
-   ============================================================================ */
-document.getElementById("btn-start").addEventListener("click", () => {
-  iniciarTimer();
-  mostrarEscena("scene-1");
-});
-
-document.getElementById("form-2").addEventListener("submit", (e) => {
-  e.preventDefault();
-  verificarSecuenciaEstacion2();
-});
-
-document.getElementById("next-1").addEventListener("click", () => mostrarEscena("scene-2"));
-document.getElementById("next-2").addEventListener("click", () => mostrarEscena("scene-3"));
-document.getElementById("next-3").addEventListener("click", () => mostrarFinal());
-
-document.querySelectorAll("[data-goto]").forEach(btn => {
-  btn.addEventListener("click", () => mostrarEscena(btn.dataset.goto));
-});
-
-document.getElementById("btn-reset").addEventListener("click", reiniciarMision);
-
-// Estado inicial del registro, del código y de los juegos de las Estaciones 1, 2 y 3 al cargar la página
-renderEstacion1();
-renderEstacion2();
-renderEstacion3();
-actualizarCodigo();
-actualizarRegistro();
-actualizarStepper();
-</script>
+<script src="js/config.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/juego.js"></script>
 </body>
 </html>

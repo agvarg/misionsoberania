@@ -1,0 +1,89 @@
+MISIÓN SOBERANÍA VITAL 2050 · Hackeando a KRONOS-9
+==================================================
+
+CÓMO ABRIRLO (2 formas)
+
+  FORMA RECOMENDADA — para que el video de la Estación 2 se vea DENTRO de la página:
+    Windows:      hacé doble clic en  "Iniciar (Windows).bat"
+    Mac / Linux:  hacé doble clic en  "Iniciar (Mac o Linux).sh"
+                  (en Mac, si pide permiso, click derecho > Abrir; en Linux puede hacer
+                  falta "chmod +x" una sola vez, o botón derecho > Ejecutar como programa)
+    Esto abre una ventana negra (una terminal) que tiene que quedar abierta mientras
+    el grupo juega, y el navegador se abre solo en la dirección correcta. Para cerrar
+    al terminar, volvé a esa ventana y cerrala (o Ctrl+C).
+    Requiere tener Python instalado (ya viene instalado en la gran mayoría de las
+    netbooks; si no lo tiene, se puede instalar gratis desde python.org).
+
+  FORMA SIMPLE — sin Python, doble clic directo en index.html:
+    Funciona todo el juego igual, PERO el video de YouTube de la Estación 2 no puede
+    reproducirse adentro de la página (es una restricción de YouTube: no permite sus
+    videos incrustados en páginas abiertas así, "file://", sin excepción posible desde
+    acá). En ese caso aparece un aviso y el botón «Abrir en YouTube», que lo abre en una
+    pestaña aparte; cuando el grupo termina de verlo, sigue con la actividad normalmente.
+
+  No hay que instalar nada más. Todo funciona sin internet, EXCEPTO el video de la
+  Estación 2 (que siempre necesita internet, se vea incrustado o en una pestaña aparte).
+
+CONTENIDO DE LA CARPETA
+  index.html                    La página.
+  "Iniciar (Windows).bat"       Lanzador para Windows (ver arriba).
+  "Iniciar (Mac o Linux).sh"    Lanzador para Mac o Linux (ver arriba).
+  css/estilos.css               Colores, tamaños y diseño.
+  js/config.js                  *** LO ÚNICO QUE HACE FALTA EDITAR *** (claves, textos, tarjetas, video, sonidos).
+  js/juego.js                   Lógica del juego (no hace falta tocarlo).
+  js/audio.js                   Reproducción de sonidos y música (no hace falta tocarlo).
+  sonidos/                      Efectos de sonido y música de fondo (.wav).
+  fuentes/                      Tipografías Orbitron y Rajdhani (licencia libre SIL OFL).
+
+  IMPORTANTE: no separes index.html del resto de la carpeta; necesita css/, js/, sonidos/ y fuentes/.
+
+QUÉ SE PUEDE CAMBIAR EN js/config.js (abrilo con el Bloc de notas)
+  - claves.estacion1 / estacion2 / estacion3   Las claves de la misión (por defecto K-8, E-8 y 4).
+  - estacion1Documento                          Número y lugar del documento impreso (por defecto 0075, caja de seguridad).
+  - estacion1Tarjetas                           Especies de la Estación 1 (nombre, emoji, pista, "nativa" o "exotica").
+  - estacion2Video                              El video de la Estación 2 (el ID es lo que va después de "v=" en YouTube).
+  - estacion2Elementos / estacion2Intrusos      Tarjetas de la red trófica y tarjetas que NO pertenecen.
+  - estacion3Residuos / estacion3PrioridadCorrecta   Residuos y orden de las 3R de la Estación 3.
+  - sonidos                                     Volumen, o silencio al inicio (activadoAlInicio: false).
+
+SONIDOS Y MÚSICA
+  Cada sonido (y la música) es un archivo de la carpeta sonidos/. Para usar uno propio, reemplazá
+  el archivo conservando el mismo nombre (por ejemplo sonidos/acierto.wav). Se aceptan .wav y .mp3
+  (si usás .mp3, cambiá la extensión en config.js). En el encabezado hay dos botones para silenciar
+  por separado los efectos ("Sonido") y la música de fondo ("Música"). Los navegadores solo permiten
+  reproducir audio después del primer clic: por eso todo el audio arranca recién al apretar
+  "Iniciar protocolo de acceso", y no antes.
+
+  La música de fondo (sonidos/musica_fondo.wav) suena en loop desde que arranca la misión hasta
+  el final, bien por debajo del volumen de los efectos. Se puede cambiar el volumen o desactivarla
+  por defecto en CONFIG.sonidos.musica, dentro de js/config.js. Para reemplazarla por otra canción,
+  lo más prolijo es un .wav sin comprimir (de un .mp3 o de YouTube se puede convertir gratis con
+  cualquier conversor online); así el loop no tiene el pequeño salto que a veces se nota en un
+  .mp3 al repetirse muchas veces durante toda una clase.
+
+TAMAÑO DEL TEXTO
+  El texto de lectura mide 17 pt (≈22,7 px) en pantallas de 1100 px o más. Para agrandar o achicar
+  TODO el texto, cambiá el número de  html{ font-size: 22.7px }  al principio de css/estilos.css.
+  En pantallas menores a 1100 px el texto baja a 20 px (y a 18 px por debajo de 700 px).
+
+VIDEO DE LA ESTACIÓN 2 (necesita internet)
+  - La actividad se habilita cuando el video termina. Hay un botón "Abrir en YouTube" de respaldo.
+  - Si el video no carga (sin internet o si YouTube rechaza mostrarlo dentro de la página), aparece
+    un aviso y el botón para seguir se habilita solo, así la clase no queda trabada.
+  - Si abrís index.html directamente desde la carpeta (dirección que empieza con file://), YouTube a
+    veces muestra "Error 153" y no reproduce. Opciones: (a) usar el enlace "Abrir en YouTube";
+    (b) publicar la carpeta en un sitio web (por ejemplo GitHub Pages); o (c) desde la carpeta abrir
+    una terminal y ejecutar  python -m http.server  y entrar a http://localhost:8000
+  - Si no querés exigir el video completo: en config.js poné  exigirVerCompleto: false.
+  - No se puede saltear el video con el botón, pero un estudiante puede adelantar la barra hasta el
+    final. Si querés controlarlo, supervisá esa etapa.
+
+QUÉ QUEDA REGISTRADO PARA EVIDENCIA
+  El panel "Registro de intentos" (a la derecha) muestra intentos y estado de cada estación y de la
+  transmisión final, más el tiempo de misión. Al terminar aparece un resumen. El botón
+  "Reiniciar misión" deja todo listo para el próximo equipo. Los datos no se guardan al cerrar
+  la página: si querés conservarlos, sacá una captura de pantalla de la pantalla final.
+
+REQUISITOS
+  Navegador actualizado (Chrome/Edge/Firefox). Las tarjetas de la Estación 2 se pueden arrastrar con
+  mouse, touchpad o dedo; también se puede tocar la tarjeta y luego el casillero, o usar Enter/Espacio.
